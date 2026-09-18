@@ -17,11 +17,15 @@ import java.util.Optional;
 @RestController
 public class ExpenseController {
 
+    // Repositories for constructor injection
+    private final UserRepository userRepository;
     private final ExpenseRepository expenseRepository;
 
-    // Constructor injection
-    public ExpenseController(ExpenseRepository expenseRepository) {
+    // Constructor injection for expense
+    public ExpenseController(ExpenseRepository expenseRepository, UserRepository userRepository) {
         this.expenseRepository = expenseRepository;
+        this.userRepository = userRepository;
+        
     }
 
     // Handles GET expenses
@@ -31,24 +35,44 @@ public class ExpenseController {
     }
 
     // Handles POST expenses
-    @PostMapping("/expenses")
-    public ResponseEntity<Expense> createExpense(@RequestBody Expense expense) {
-        Expense savedExpense = expenseRepository.save(expense);
-        return ResponseEntity.ok(savedExpense);
+    @PostMapping("/users/{id}/expenses")
+    public ResponseEntity<Expense> createExpense(@RequestBody Expense expense, @PathVariable Long id) {
+        Optional<User> result = userRepository.findById(id);
+
+        if (result.isPresent()) { 
+            
+            User user = result.get();
+            
+            expense.setUser(user);
+            
+            Expense savedExpense = expenseRepository.save(expense);
+
+            return ResponseEntity.ok(savedExpense);
+        }
+        
+        
+        return ResponseEntity.notFound().build();
     }
 
     // GET expense by id
     // Uses @PathVariable to tell the function that the id parameter comes from the URL
     @GetMapping("/expenses/{id}") 
-    public Optional<Expense> getExpenseById(@PathVariable Long id) {
+    public Optional<Expense> getExpensesById(@PathVariable Long id) {
         return expenseRepository.findById(id);
+    }
+
+    // GET expense by userId
+    // Uses @PathVariable to tell the function that the id parameter comes from the URL
+    @GetMapping("/users/{id}/expenses") 
+    public List<Expense> getExpensesByUserId(@PathVariable Long id) {
+        return expenseRepository.findByUserId(id);
     }
 
     // UPDATE expense by id
     // uses @pathvariable etc.
     @PutMapping("/expenses/{id}")
     public Optional<Expense> putExpenseById(@PathVariable Long id, @RequestBody Expense expense) {
-        Optional<Expense> result = getExpenseById(id);
+        Optional<Expense> result = getExpensesById(id);
         
         if (result.isPresent()) {
             Expense existingExpense = result.get();
@@ -72,5 +96,5 @@ public class ExpenseController {
         expenseRepository.deleteById(id);
     }
 
-
+    
 }
