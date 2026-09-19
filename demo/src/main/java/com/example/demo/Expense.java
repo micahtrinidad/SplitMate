@@ -10,7 +10,6 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal; // for money
 import java.time.LocalDate; // for date
-import java.util.Locale.Category;
 
 @Entity
 @Table (name = "expenses") 
@@ -46,5 +45,11 @@ public class Expense {
     // Setters and getters for user in Expense
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
+    // Setters and getters for user in Category
+    public Category getCategory() { return category; }
+    public void setCategory(Category category) { this.category = category; }
+
+
 
 }
