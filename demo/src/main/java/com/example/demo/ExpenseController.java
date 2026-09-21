@@ -7,10 +7,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.PathVariable;
 
-
-
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,11 +22,13 @@ public class ExpenseController {
     // Repositories for constructor injection
     private final UserRepository userRepository;
     private final ExpenseRepository expenseRepository;
+    private final CategoryRepository categoryRepository;
 
     // Constructor injection for expense
-    public ExpenseController(ExpenseRepository expenseRepository, UserRepository userRepository) {
+    public ExpenseController(ExpenseRepository expenseRepository, UserRepository userRepository, CategoryRepository categoryRepository) {
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
         
     }
 
@@ -35,23 +39,42 @@ public class ExpenseController {
     }
 
     // Handles POST expenses
-    @PostMapping("/users/{id}/expenses")
-    public ResponseEntity<Expense> createExpense(@RequestBody Expense expense, @PathVariable Long id) {
-        Optional<User> result = userRepository.findById(id);
+    @PostMapping("/users/{userId}/categories/{categoryId}/expenses")
+    public ResponseEntity<Expense> createExpense(
+        @RequestBody Expense expense, 
+        @PathVariable Long userId, 
+        @PathVariable Long categoryId) {
+        Optional<User> userResult = userRepository.findById(userId);
+        Optional<Category> categoryResult = categoryRepository.findById(categoryId);
 
-        if (result.isPresent()) { 
+        if (userResult.isPresent()) { 
+            if (categoryResult.isPresent()) {
+                User user = userResult.get();
+                Category category = categoryResult.get();
             
-            User user = result.get();
+                expense.setUser(user);
+                expense.setCategory(category);
             
-            expense.setUser(user);
-            
-            Expense savedExpense = expenseRepository.save(expense);
+                Expense savedExpense = expenseRepository.save(expense);
 
-            return ResponseEntity.ok(savedExpense);
+                return ResponseEntity.ok(savedExpense);
+            }
+            
         }
         
         
         return ResponseEntity.notFound().build();
+    }
+
+    // Handles GET expenses by user id and category id
+    // Spring Data JPA interprets the method you invoke
+    @GetMapping("/users/{userId}/categories/{categoryId}/expenses")
+    public List<Expense> getExpensesByUserIdAndCategoryId(
+        @PathVariable Long userId, 
+        @PathVariable Long categoryId) {
+        
+            return expenseRepository.findByUserIdAndCategoryId(userId, categoryId);
+    
     }
 
     // GET expense by id
@@ -66,6 +89,19 @@ public class ExpenseController {
     @GetMapping("/users/{id}/expenses") 
     public List<Expense> getExpensesByUserId(@PathVariable Long id) {
         return expenseRepository.findByUserId(id);
+    }
+
+    // GET expense amount total by userId
+    // gets the total amount of expenses using a specific user id
+    @GetMapping("/users/{userId}/expenses/total")
+    public Optional<BigDecimal> getTotalExpenses(@PathVariable Long userId) {
+        BigDecimal total = expenseRepository.getTotalExpenseAmount();
+
+        if (total == null) {
+            total = BigDecimal.ZERO;
+        }
+
+        return Optional.of(total);
     }
 
     // UPDATE expense by id

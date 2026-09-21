@@ -7,7 +7,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal; // for money
 import java.time.LocalDate; // for date
 
@@ -19,8 +21,13 @@ public class Expense {
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank (message = "Description cannot be empty")
     private String description;
+
+    @NotNull (message = "Amount must be a valid number")
+    @Positive (message = "Amount must be a positive number")
     private BigDecimal amount;
+    
     private LocalDate date;
 
     public Long getId() { return id; }
