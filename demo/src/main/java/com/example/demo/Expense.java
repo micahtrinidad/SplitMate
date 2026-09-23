@@ -28,6 +28,7 @@ public class Expense {
     @Positive (message = "Amount must be a positive number")
     private BigDecimal amount;
     
+    @NotNull (message = "Date cannot be empty")
     private LocalDate date;
 
     public Long getId() { return id; }
