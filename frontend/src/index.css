@@ -109,3 +109,51 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+main {
+  padding: 0 24px 48px;
+}
+
+section {
+  margin: 0 auto 40px;
+  max-width: 640px;
+}
+
+.expense-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.expense-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.expense-form input,
+.expense-form select,
+.expense-form button {
+  box-sizing: border-box;
+  font: inherit;
+  padding: 8px;
+}
+
+.expense-form button {
+  cursor: pointer;
+}
+
+.error-message {
+  color: #c62828;
+}
+
+.expense-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.expense-item {
+  border: 1px solid var(--border);
+  padding: 12px;
+}

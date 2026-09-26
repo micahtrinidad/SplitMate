@@ -1,150 +1,155 @@
-// import { useState } from 'react'
-// import heroImg from './assets/hero.png'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from './assets/vite.svg'
-// import './App.css'
-
-// function App() {
-//   const [count, setCount] = useState(0)
-
-//   return (
-//     <>
-//       <section id="center">
-//         <div className="hero">
-//           <img src={heroImg} className="base" width="170" height="179" alt="" />
-//           <img src={reactLogo} className="framework" alt="React logo" />
-//           <img src={viteLogo} className="vite" alt="Vite logo" />
-//         </div>
-//         <div>
-//           <h1>Get started</h1>
-//           <p>
-//             Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-//           </p>
-//         </div>
-//         <button
-//           type="button"
-//           className="counter"
-//           onClick={() => setCount((count) => count + 1)}
-//         >
-//           Count is {count}
-//         </button>
-//       </section>
-
-//       <div className="ticks"></div>
-
-//       <section id="next-steps">
-//         <div id="docs">
-//           <svg className="icon" role="presentation" aria-hidden="true">
-//             <use href="/icons.svg#documentation-icon"></use>
-//           </svg>
-//           <h2>Documentation</h2>
-//           <p>Your questions, answered</p>
-//           <ul>
-//             <li>
-//               <a href="https://vite.dev/" target="_blank">
-//                 <img className="logo" src={viteLogo} alt="" />
-//                 Explore Vite
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://react.dev/" target="_blank">
-//                 <img className="button-icon" src={reactLogo} alt="" />
-//                 Learn more
-//               </a>
-//             </li>
-//           </ul>
-//         </div>
-//         <div id="social">
-//           <svg className="icon" role="presentation" aria-hidden="true">
-//             <use href="/icons.svg#social-icon"></use>
-//           </svg>
-//           <h2>Connect with us</h2>
-//           <p>Join the Vite community</p>
-//           <ul>
-//             <li>
-//               <a href="https://github.com/vitejs/vite" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#github-icon"></use>
-//                 </svg>
-//                 GitHub
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://chat.vite.dev/" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#discord-icon"></use>
-//                 </svg>
-//                 Discord
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://x.com/vite_js" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#x-icon"></use>
-//                 </svg>
-//                 X.com
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://bsky.app/profile/vite.dev" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#bluesky-icon"></use>
-//                 </svg>
-//                 Bluesky
-//               </a>
-//             </li>
-//           </ul>
-//         </div>
-//       </section>
-
-//       <div className="ticks"></div>
-//       <section id="spacer"></section>
-//     </>
-//   )
-// }
-
-// export default App
 import { useEffect, useState } from 'react'
+
+const userId = 2
+const expensesUrl = `http://localhost:8080/users/${userId}/expenses`
+
+async function fetchExpenses() {
+  const response = await fetch(expensesUrl)
+
+  if (!response.ok) {
+    throw new Error('Unable to load expenses.')
+  }
+
+  return response.json()
+}
 
 function App() {
   const [expenses, setExpenses] = useState([])
+  const [categories, setCategories] = useState([])
+  const [description, setDescription] = useState('')
+  const [amount, setAmount] = useState('')
+  const [date, setDate] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
-    fetch('http://localhost:8080/users/2/expenses')
-      .then(response => response.json())
-      .then(data => setExpenses(data))
+    fetchExpenses()
+      .then(setExpenses)
+      .catch(error => console.error(error))
+
+    fetch('http://localhost:8080/categories')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Unable to load categories.')
+        }
+
+        return response.json()
+      })
+      .then(setCategories)
       .catch(error => console.error(error))
   }, [])
 
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setSubmitError('')
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/users/${userId}/categories/${selectedCategoryId}/expenses`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            description,
+            amount: Number(amount),
+            date,
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error('Unable to add expense.')
+      }
+
+      const savedExpense = await response.json()
+
+      setDescription('')
+      setAmount('')
+      setDate('')
+      setSelectedCategoryId('')
+      setExpenses(currentExpenses => [...currentExpenses, savedExpense])
+    } catch (error) {
+      console.error(error)
+      setSubmitError('Could not add the expense. Please try again.')
+    }
+  }
+
   return (
-    <div>
+    <main>
       <h1>SplitMate</h1>
 
-      {expenses.map(expense => (
-        <div key={expense.id}>
-          <p>{expense.description}</p>
-          <p>${expense.amount}</p>
-          <p>{expense.date}</p>
-          <p>{expense.category?.name}</p>
+      <section>
+        <h2>Add Expense</h2>
+        <form className="expense-form" onSubmit={handleSubmit}>
+          <label>
+            Description
+            <input
+              type="text"
+              value={description}
+              onChange={event => setDescription(event.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            Amount
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={amount}
+              onChange={event => setAmount(event.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            Date
+            <input
+              type="date"
+              value={date}
+              onChange={event => setDate(event.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            Category
+            <select
+              value={selectedCategoryId}
+              onChange={event => setSelectedCategoryId(event.target.value)}
+              required
+            >
+              <option value="">Select a category</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button type="submit">Add Expense</button>
+          {submitError && <p className="error-message">{submitError}</p>}
+        </form>
+      </section>
+
+      <section>
+        <h2>Expenses</h2>
+        <div className="expense-list">
+          {expenses.map(expense => (
+            <article key={expense.id} className="expense-item">
+              <p>{expense.description}</p>
+              <p>${expense.amount}</p>
+              <p>{expense.date}</p>
+              <p>{expense.category?.name}</p>
+            </article>
+          ))}
         </div>
-      ))}
-    </div>
+      </section>
+    </main>
   )
 }
 
